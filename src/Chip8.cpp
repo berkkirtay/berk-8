@@ -49,7 +49,329 @@ int32_t Chip8::loadROM(const char* ROMPath)
    }
 }
 
+void Chip8::x0000()
+{
+   switch (opcode & 0x0FFF)
+   {
+      // 00E0 - CLS
+      case 0x00E0:
+         memset(graphics, 0, sizeof(graphics));
+         draw = true;
+         break;
+         // 00EE - RET
+      case 0x00EE:
+         SP--;
+         PC = stack[SP];
+         break;
+         /* 0nnn - SYS addr:
+          * 0nnn -> Calls machine code routine (RCA 1802 for COSMAC VIP)
+          * at address NNN. Not necessary for most ROMs.
+          */
+      default:
+         PC = memory[opcode & 0x0FFF];
+         break;
+   }
+}
+/*
+ * 1nnn - JP addr
+ */
+void Chip8::x1000()
+{
+   PC = opcode & 0x0FFF;
+}
+/*
+ * 2nnn - CALL addr
+ */
+void Chip8::x2000()
+{
+   stack[SP] = PC;
+   SP++;
+   PC = opcode & 0x0FFF;
+}
+/*
+ * 3xkk - SE Vx, kk
+ */
+void Chip8::x3000()
+{
+   if ((opcode & 0x00FF) == registers[Vx])
+   {
+      PC += 2;
+   }
+}
+/*
+ * 4xkk - SNE Vx, kk
+ */
+void Chip8::x4000()
+{
+   if ((opcode & 0x00FF) != registers[Vx])
+   {
+      PC += 2;
+   }
+}
+/*
+ * 5xy0 - SE Vx, Vy
+ */
+void Chip8::x5000()
+{
+   if (registers[Vx] == registers[Vy])
+   {
+      PC += 2;
+   }
+}
+/*
+ * 6xkk - LD Vx, kk
+ */
+void Chip8::x6000()
+{
+   registers[Vx] = opcode & 0x00FF;
+}
+/*
+ * 7xkk - ADD Vx, kk
+ */
+void Chip8::x7000()
+{
+   registers[Vx] += opcode & 0x00FF;
+}
+/*
+ * 0x8000 Arithmetic Instructions
+ */
+void Chip8::x8000()
+{
+   switch (opcode & 0x000F)
+   {
+      //  8xy0 - LD Vx, Vy
+      case 0x0000:
+         registers[Vx] = registers[Vy];
+         break;
+         // 8xy1 - OR Vx, Vy
+      case 0x0001:
+         registers[Vx] |= registers[Vy];
+         break;
+         // 8xy2 - AND Vx, Vy
+      case 0x0002:
+         registers[Vx] &= registers[Vy];
+         break;
+         // 8xy3 - XOR Vx, Vy
+      case 0x0003:
+         registers[Vx] ^= registers[Vy];
+         break;
+         // 8xy4 - ADD Vx, Vy
+      case 0x0004:
+         {
+            uint16_t sum = registers[Vx] + registers[Vy];
+            if (sum > 255)
+            {
+               registers[0xF] = 1;
+            }
+            else
+            {
+               registers[0xF] = 0;
+            }
+            registers[Vx] = sum & 0x00FF;
+            break;
+         }
+         // 8xy5 - SUB Vx, Vy
+      case 0x0005:
+         if (registers[Vx] > registers[Vy])
+         {
+            registers[0xF] = 1;
+         }
+         else
+         {
+            registers[0xF] = 0;
+         }
+         registers[Vx] -= registers[Vy];
+         break;
+         // 8xy6 - SHR Vx {, Vy}
+      case 0x0006:
+         registers[0xF] = registers[Vx] & 0x01;
+         registers[Vx] >>= 1;
+         break;
+         // 8xy7 - SUBN Vx, Vy
+      case 0x0007:
+         if (registers[Vx] < registers[Vy])
+         {
+            registers[0xF] = 1;
+         }
+         else
+         {
+            registers[0xF] = 0;
+         }
+         registers[Vx] = registers[Vy] - registers[Vx];
+         break;
+         // 8xyE - SHL Vx {, Vy}
+      case 0x000E:
+         registers[0xF] = registers[Vx] >> 7;
+         registers[Vx] <<= 1;
+         break;
+      default:
+         std::cerr << "cerr: " << opcode << std::endl;
+         break;
+   }
+}
+/*
+* 9xy0 - SNE Vx, Vy
+*/
+void Chip8::x9000()
+{
+   if (registers[Vx] != registers[Vy])
+   {
+      PC += 2;
+   }
+}
+/*
+* Annn - LD I, addr
+*/
+void Chip8::xA000()
+{
+   I = opcode & 0x0FFF;
+}
+/*
+* Bnnn - JP V0, addr
+*/
+void Chip8::xB000()
+{
+   PC = (opcode & 0x0FFF) + registers[0];
+}
+/*
+* Cxkk - RND Vx, byte
+*/
+void Chip8::xC000()
+{
+   registers[Vx] = (opcode & 0x00FF) & (rand() % 255);
+}
+/*
+* Dxyn - DRW Vx, Vy, n
+*/
+void Chip8::xD000()
+{
+   uint8_t n = opcode & 0x000F;
+   registers[0xF] = 0;
 
+   for (auto row = 0; row < n; row++)
+   {
+      uint8_t sprite = memory[I + row];
+
+      for (auto col = 0; col < 8; col++)
+      {
+         uint8_t spritePixel = (sprite & 0x80) >> 7;
+         sprite <<= 1;
+         uint16_t point_y = ((registers[Vy] + row) % 32) * 64;
+         uint16_t point_x = ((registers[Vx] + col) % 64);
+
+         if (spritePixel != 0)
+         {
+            // Collision happens at sprite:
+            if (graphics[point_y + point_x] == 0xFFFFFFFF)
+            {
+               registers[0xF] = 1;
+            }
+            graphics[point_y + point_x] ^= 0xFFFFFFFF;
+         }
+      }
+   }
+   draw = true;
+}
+/*
+* Key press branching instructions:
+*/
+void Chip8::xE000()
+{
+   switch (opcode & 0x00FF)
+   {
+      // Ex9E - SKP Vx
+      case 0x009E:
+         if (keys[registers[Vx]] != 0)
+         {
+            PC += 2;
+         }
+         break;
+         // ExA1 - SKNP Vx
+      case 0x00A1:
+         if (keys[registers[Vx]] == 0)
+         {
+            PC += 2;
+         }
+         break;
+      default:
+         std::cerr << "cerr: " << opcode << std::endl;
+         break;
+   }
+}
+void Chip8::xF000()
+{
+   switch (opcode & 0x00FF)
+   {
+      // Fx07 - LD Vx, DT
+      case 0x0007:
+         registers[Vx] = delayTimer;
+         break;
+
+         /*
+         * Fx0A - LD Vx, K
+         * Polling Operation. All instructions
+         * are halted until next key event.
+         */
+      case 0x000A:
+         {
+            bool isKeyPressed = false;
+            for (int i = 0; i < 16; i++)
+            {
+               if (keys[i] != 0)
+               {
+                  registers[Vx] = i + 1;
+                  isKeyPressed = true;
+                  break;
+               }
+            }
+            if (isKeyPressed == false)
+            {
+               PC -= 2;
+            }
+            break;
+         }
+
+         // Fx15 - LD DT, Vx
+      case 0x0015:
+         delayTimer = registers[Vx];
+         break;
+         // Fx18 - LD ST, Vx
+      case 0x0018:
+         soundTimer = registers[Vx];
+         break;
+         // Fx1E - ADD I, Vx
+      case 0x001E:
+         I += registers[Vx];
+         break;
+         // Fx29 - LD F, Vx
+      case 0x0029:
+         I = 0x50 + (registers[Vx] * 0x5);  // check!!
+         break;
+         // Fx33 - LD B, Vx
+      case 0x033:
+         memory[I] = registers[Vx] / 100;
+         memory[I + 1] = (registers[Vx] / 10) % 10;
+         memory[I + 2] = registers[Vx] % 10;
+         break;
+         // Fx55 - LD [I], Vx
+      case 0x055:
+         for (int i = 0; i <= Vx; i++)
+         {
+            memory[I + i] = registers[i];
+         }
+         break;
+         // Fx65 - LD Vx, [I]
+      case 0x065:
+         for (int i = 0; i <= Vx; i++)
+         {
+            registers[i] = memory[I + i];
+         }
+         break;
+      default:
+         std::cerr << "cerr : " << opcode << std::endl;
+         break;
+   }
+}
 
 void Chip8::emulateNextClockCycle()
 {
@@ -59,8 +381,8 @@ void Chip8::emulateNextClockCycle()
    // DECODE step:
    decode();
 
-   // TODO: EXECUTE step:
-
+   // EXECUTE step:
+   (this->*instructionMap[currentInstruction])();
 
    // Handle timer and blockers:
    calculateTimersAndBlock();

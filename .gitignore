@@ -35,4 +35,4 @@
 *.wav
 *.ch8
 .vscode/*
-.roms/*
+roms/*

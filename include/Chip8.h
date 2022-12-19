@@ -58,6 +58,27 @@ private:
         0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
+    using Handler = void (Chip8::*)();
+    std::unordered_map<
+        InstructionSet::InstructionFamily,
+        Handler>
+        instructionMap = {
+            {InstructionSet::x0000, &Chip8::x0000},
+            {InstructionSet::x1000, &Chip8::x1000},
+            {InstructionSet::x2000, &Chip8::x2000},
+            {InstructionSet::x3000, &Chip8::x3000},
+            {InstructionSet::x4000, &Chip8::x4000},
+            {InstructionSet::x5000, &Chip8::x5000},
+            {InstructionSet::x6000, &Chip8::x6000},
+            {InstructionSet::x7000, &Chip8::x7000},
+            {InstructionSet::x8000, &Chip8::x8000},
+            {InstructionSet::x9000, &Chip8::x9000},
+            {InstructionSet::xA000, &Chip8::xA000},
+            {InstructionSet::xB000, &Chip8::xB000},
+            {InstructionSet::xC000, &Chip8::xC000},
+            {InstructionSet::xD000, &Chip8::xD000},
+            {InstructionSet::xE000, &Chip8::xE000},
+            {InstructionSet::xF000, &Chip8::xF000} };
 
 private:
     void fetch();
@@ -67,6 +88,25 @@ private:
      * timing and delaying in every instruction cycle.
      */
     void calculateTimersAndBlock();
+    /*
+     * Instruction Handler Functions:
+     */
+    void x0000();
+    void x1000();
+    void x2000();
+    void x3000();
+    void x4000();
+    void x5000();
+    void x6000();
+    void x7000();
+    void x8000();
+    void x9000();
+    void xA000();
+    void xB000();
+    void xC000();
+    void xD000();
+    void xE000();
+    void xF000();
 
 public:
     void initialize();
