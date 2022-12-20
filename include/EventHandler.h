@@ -2,7 +2,6 @@
 
 #include <SDL2/SDL.h>
 #include <unordered_map>
-#include "Chip8.h"
 
 class EventHandler
 {

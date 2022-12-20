@@ -5,14 +5,14 @@
 Screen::Screen()
 {
     SDL_Init(SDL_INIT_VIDEO);
-    window = SDL_CreateWindow("CHIP-8 Emulator",
+    window = SDL_CreateWindow("berk-8",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
         1280, 640, 0);
     renderer = SDL_CreateRenderer(window, -1, 0);
 
     SDL_RenderSetScale(renderer, 1, 1);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
     texture = SDL_CreateTexture(renderer,
         SDL_PIXELFORMAT_UNKNOWN,
@@ -20,7 +20,7 @@ Screen::Screen()
         64, 32);
 
 
-    SDL_SetTextureColorMod(texture, 255, 100, 255);
+    SDL_SetTextureColorMod(texture, 255, 255, 255);
 }
 
 void Screen::render(uint32_t* graphics)

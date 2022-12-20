@@ -20,7 +20,7 @@ void Chip8::initialize()
 
    for (int i = 0; i < 80; ++i)
    {
-      memory[i + 0x50] = fontset[i];
+      memory[i] = fontSet[i];
    }
    srand(time(NULL));
 }
@@ -242,6 +242,7 @@ void Chip8::xC000()
 }
 /*
 * Dxyn - DRW Vx, Vy, n
+* Sprite drawing instruction:
 */
 void Chip8::xD000()
 {
@@ -250,23 +251,28 @@ void Chip8::xD000()
 
    for (auto row = 0; row < n; row++)
    {
+      // Processing sprites starting from I to I + height of:
       uint8_t sprite = memory[I + row];
 
       for (auto col = 0; col < 8; col++)
       {
-         uint8_t spritePixel = (sprite & 0x80) >> 7;
-         sprite <<= 1;
+         // Acquiring the pixel positions:
          uint16_t point_y = ((registers[Vy] + row) % 32) * 64;
          uint16_t point_x = ((registers[Vx] + col) % 64);
 
+         // Acquiring the pixel value at the column and checking
+         // if the pixel is chosen to be drawn:
+         uint8_t spritePixel = sprite & (0x80 >> col);
          if (spritePixel != 0)
          {
-            // Collision happens at sprite:
-            if (graphics[point_y + point_x] == 0xFFFFFFFF)
+            // If collision happens at sprite, we set VF to 1:
+            if (graphics[point_y + point_x])
             {
                registers[0xF] = 1;
             }
-            graphics[point_y + point_x] ^= 0xFFFFFFFF;
+            // Flipping the value of pixel, so if it is 
+            // already drawn, it will be turned off:
+            graphics[point_y + point_x] = ~graphics[point_y + point_x];
          }
       }
    }
@@ -345,7 +351,7 @@ void Chip8::xF000()
          break;
          // Fx29 - LD F, Vx
       case 0x0029:
-         I = 0x50 + (registers[Vx] * 0x5);  // check!!
+         I = registers[Vx] * 0x5;
          break;
          // Fx33 - LD B, Vx
       case 0x033:

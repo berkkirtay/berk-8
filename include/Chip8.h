@@ -1,3 +1,5 @@
+// Copyright (c) 2022 Berk Kırtay
+
 #pragma once
 #include <iostream>
 #include <memory>
@@ -10,10 +12,7 @@
 #include <random>
 #include <string.h>
 #include <thread>
-// Copyright (c) 2022 Berk Kırtay
-
 #include <chrono>
-#include <functional>
 #include <unordered_map>
 #include "InstructionSet.h"
 
@@ -40,7 +39,7 @@ private:
     uint8_t Vx;
     uint8_t Vy;
     InstructionSet::InstructionFamily currentInstruction;
-    uint8_t fontset[80] = {
+    uint8_t fontSet[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -58,6 +57,10 @@ private:
         0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
+
+    /*
+     * Instruction Handler Functions:
+     */
     using Handler = void (Chip8::*)();
     std::unordered_map<
         InstructionSet::InstructionFamily,
@@ -88,9 +91,6 @@ private:
      * timing and delaying in every instruction cycle.
      */
     void calculateTimersAndBlock();
-    /*
-     * Instruction Handler Functions:
-     */
     void x0000();
     void x1000();
     void x2000();
