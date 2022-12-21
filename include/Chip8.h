@@ -18,13 +18,14 @@
 
 /*
  * @opcode: 0xNNNN, 0xnVxVyn
- * @registers take index values from Vx and Vy.
+ * @registers take index values from Vx and Vy operands.
  */
 class Chip8
 {
 private:
     uint8_t memory[0x1000];
-    uint16_t opcode;
+    uint16_t currentInstruction;
+    InstructionSet::InstructionFamily opcode;
     uint8_t registers[0x10];
     uint16_t stack[0x10];
     uint8_t keys[0x10];
@@ -38,7 +39,6 @@ private:
     std::chrono::steady_clock::time_point timePoint;
     uint8_t Vx;
     uint8_t Vy;
-    InstructionSet::InstructionFamily currentInstruction;
     uint8_t fontSet[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -86,10 +86,6 @@ private:
 private:
     void fetch();
     void decode();
-    /*
-     * calculateTimersAndBlock function handles
-     * timing and delaying in every instruction cycle.
-     */
     void calculateTimersAndBlock();
     void x0000();
     void x1000();

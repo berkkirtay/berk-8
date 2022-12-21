@@ -5,7 +5,6 @@
 void Chip8::initialize()
 {
    PC = 0x200;
-   opcode = 0;
    I = 0;
    SP = 0;
    delayTimer = 0;
@@ -49,9 +48,73 @@ int32_t Chip8::loadROM(const char* ROMPath)
    }
 }
 
+void Chip8::emulateNextClockCycle()
+{
+   //FETCH step:
+   fetch();
+
+   // DECODE step:
+   decode();
+
+   // EXECUTE step:
+   (this->*instructionMap[opcode])();
+
+   // Handle timer and blockers:
+   calculateTimersAndBlock();
+}
+
+/*
+* Fetching currentInstruction is done by combining two contiguous memmory locations.
+* Since CHIP-8 stores instructions in that way, we increment PC by 2.
+*/
+void Chip8::fetch()
+{
+   currentInstruction = memory[PC] << 8 | memory[PC + 1];
+   PC += 2;
+}
+
+void Chip8::decode()
+{
+   opcode = static_cast<InstructionSet::InstructionFamily>(currentInstruction & 0xF000);
+   Vx = (currentInstruction & 0x0F00) >> 8;
+   Vy = (currentInstruction & 0x00F0) >> 4;
+}
+
+/*
+ * calculateTimersAndBlock function handles
+ * timing and delaying in every instruction cycle.
+ */
+void Chip8::calculateTimersAndBlock()
+{
+   /*
+    * 60 Hz = 	0.0167 seconds = 16.7 ms
+    */
+   using namespace std::chrono;
+   auto timer = static_cast<int8_t>(
+      duration_cast<milliseconds>(steady_clock::now() - timePoint).count());
+
+   if (timer >= 16.7)
+   {
+      timePoint = std::chrono::steady_clock::now();
+      if (delayTimer > 0)
+      {
+         delayTimer--;
+      }
+
+      if (soundTimer > 0)
+      {
+         soundTimer--;
+      }
+   }
+   /*
+    * 600 Hz = 0.00167 seconds = 1670 microseconds (1.67 ms)
+    */
+   std::this_thread::sleep_for(std::chrono::microseconds(1670));
+}
+
 void Chip8::x0000()
 {
-   switch (opcode & 0x0FFF)
+   switch (currentInstruction & 0x0FFF)
    {
       // 00E0 - CLS
       case 0x00E0:
@@ -68,17 +131,19 @@ void Chip8::x0000()
           * at address NNN. Not necessary for most ROMs.
           */
       default:
-         PC = memory[opcode & 0x0FFF];
+         PC = memory[currentInstruction & 0x0FFF];
          break;
    }
 }
+
 /*
  * 1nnn - JP addr
  */
 void Chip8::x1000()
 {
-   PC = opcode & 0x0FFF;
+   PC = currentInstruction & 0x0FFF;
 }
+
 /*
  * 2nnn - CALL addr
  */
@@ -86,28 +151,31 @@ void Chip8::x2000()
 {
    stack[SP] = PC;
    SP++;
-   PC = opcode & 0x0FFF;
+   PC = currentInstruction & 0x0FFF;
 }
+
 /*
  * 3xkk - SE Vx, kk
  */
 void Chip8::x3000()
 {
-   if ((opcode & 0x00FF) == registers[Vx])
+   if ((currentInstruction & 0x00FF) == registers[Vx])
    {
       PC += 2;
    }
 }
+
 /*
  * 4xkk - SNE Vx, kk
  */
 void Chip8::x4000()
 {
-   if ((opcode & 0x00FF) != registers[Vx])
+   if ((currentInstruction & 0x00FF) != registers[Vx])
    {
       PC += 2;
    }
 }
+
 /*
  * 5xy0 - SE Vx, Vy
  */
@@ -118,26 +186,29 @@ void Chip8::x5000()
       PC += 2;
    }
 }
+
 /*
  * 6xkk - LD Vx, kk
  */
 void Chip8::x6000()
 {
-   registers[Vx] = opcode & 0x00FF;
+   registers[Vx] = currentInstruction & 0x00FF;
 }
+
 /*
  * 7xkk - ADD Vx, kk
  */
 void Chip8::x7000()
 {
-   registers[Vx] += opcode & 0x00FF;
+   registers[Vx] += currentInstruction & 0x00FF;
 }
+
 /*
  * 0x8000 Arithmetic Instructions
  */
 void Chip8::x8000()
 {
-   switch (opcode & 0x000F)
+   switch (currentInstruction & 0x000F)
    {
       //  8xy0 - LD Vx, Vy
       case 0x0000:
@@ -172,6 +243,7 @@ void Chip8::x8000()
          }
          // 8xy5 - SUB Vx, Vy
       case 0x0005:
+         registers[Vx] -= registers[Vy];
          if (registers[Vx] > registers[Vy])
          {
             registers[0xF] = 1;
@@ -180,15 +252,15 @@ void Chip8::x8000()
          {
             registers[0xF] = 0;
          }
-         registers[Vx] -= registers[Vy];
          break;
          // 8xy6 - SHR Vx {, Vy}
       case 0x0006:
-         registers[0xF] = registers[Vx] & 0x01;
          registers[Vx] >>= 1;
+         registers[0xF] = registers[Vx] & 0x01;
          break;
          // 8xy7 - SUBN Vx, Vy
       case 0x0007:
+         registers[Vx] = registers[Vy] - registers[Vx];
          if (registers[Vx] < registers[Vy])
          {
             registers[0xF] = 1;
@@ -197,18 +269,19 @@ void Chip8::x8000()
          {
             registers[0xF] = 0;
          }
-         registers[Vx] = registers[Vy] - registers[Vx];
          break;
          // 8xyE - SHL Vx {, Vy}
       case 0x000E:
-         registers[0xF] = registers[Vx] >> 7;
          registers[Vx] <<= 1;
+         registers[0xF] = registers[Vx] >> 7;
          break;
       default:
-         std::cerr << "cerr: " << opcode << std::endl;
+         std::cerr << "Error at instruction: " <<
+            std::hex << currentInstruction << std::endl;
          break;
    }
 }
+
 /*
 * 9xy0 - SNE Vx, Vy
 */
@@ -219,34 +292,38 @@ void Chip8::x9000()
       PC += 2;
    }
 }
+
 /*
 * Annn - LD I, addr
 */
 void Chip8::xA000()
 {
-   I = opcode & 0x0FFF;
+   I = currentInstruction & 0x0FFF;
 }
+
 /*
 * Bnnn - JP V0, addr
 */
 void Chip8::xB000()
 {
-   PC = (opcode & 0x0FFF) + registers[0];
+   PC = (currentInstruction & 0x0FFF) + registers[0];
 }
+
 /*
 * Cxkk - RND Vx, byte
 */
 void Chip8::xC000()
 {
-   registers[Vx] = (opcode & 0x00FF) & (rand() % 255);
+   registers[Vx] = (currentInstruction & 0x00FF) & (rand() % 255);
 }
+
 /*
 * Dxyn - DRW Vx, Vy, n
 * Sprite drawing instruction:
 */
 void Chip8::xD000()
 {
-   uint8_t n = opcode & 0x000F;
+   uint8_t n = currentInstruction & 0x000F;
    registers[0xF] = 0;
 
    for (auto row = 0; row < n; row++)
@@ -278,12 +355,13 @@ void Chip8::xD000()
    }
    draw = true;
 }
+
 /*
 * Key press branching instructions:
 */
 void Chip8::xE000()
 {
-   switch (opcode & 0x00FF)
+   switch (currentInstruction & 0x00FF)
    {
       // Ex9E - SKP Vx
       case 0x009E:
@@ -300,13 +378,15 @@ void Chip8::xE000()
          }
          break;
       default:
-         std::cerr << "cerr: " << opcode << std::endl;
+         std::cerr << "Error at instruction: " <<
+            std::hex << currentInstruction << std::endl;
          break;
    }
 }
+
 void Chip8::xF000()
 {
-   switch (opcode & 0x00FF)
+   switch (currentInstruction & 0x00FF)
    {
       // Fx07 - LD Vx, DT
       case 0x0007:
@@ -374,68 +454,10 @@ void Chip8::xF000()
          }
          break;
       default:
-         std::cerr << "cerr : " << opcode << std::endl;
+         std::cerr << "Error at instruction: " <<
+            std::hex << currentInstruction << std::endl;
          break;
    }
-}
-
-void Chip8::emulateNextClockCycle()
-{
-   //FETCH step:
-   fetch();
-
-   // DECODE step:
-   decode();
-
-   // EXECUTE step:
-   (this->*instructionMap[currentInstruction])();
-
-   // Handle timer and blockers:
-   calculateTimersAndBlock();
-}
-
-/*
-* Fetching opcode is done by combining two contiguous memmory locations.
-* Since CHIP-8 stores instructions in that way, we increment PC by 2.
-*/
-void Chip8::fetch()
-{
-   opcode = memory[PC] << 8 | memory[PC + 1];
-   PC += 2;
-}
-
-void Chip8::decode()
-{
-   currentInstruction = static_cast<InstructionSet::InstructionFamily>(opcode & 0xF000);
-   Vx = (opcode & 0x0F00) >> 8;
-   Vy = (opcode & 0x00F0) >> 4;
-}
-void Chip8::calculateTimersAndBlock()
-{
-   /*
-    * 60 Hz = 	0.0167 seconds = 16.7 ms
-    */
-   using namespace std::chrono;
-   auto timer = static_cast<int8_t>(
-      duration_cast<milliseconds>(steady_clock::now() - timePoint).count());
-
-   if (timer >= 16.7)
-   {
-      timePoint = std::chrono::steady_clock::now();
-      if (delayTimer > 0)
-      {
-         delayTimer--;
-      }
-
-      if (soundTimer > 0)
-      {
-         soundTimer--;
-      }
-   }
-   /*
-    * 600 Hz = 0.00167 seconds = 1670 microseconds (1.67 ms)
-    */
-   std::this_thread::sleep_for(std::chrono::microseconds(1670));
 }
 
 uint32_t* Chip8::getGraphics()

@@ -32,7 +32,6 @@
 *.app
 
 # Misc
-*.wav
 *.ch8
 .vscode/*
 roms/*

@@ -9,7 +9,7 @@ void Frame::initializeComponents()
     screen = std::make_unique<Screen>();
     eventHandler = std::make_unique<EventHandler>();
 
-    audio->load("sound93.wav");
+    audio->load("./misc/sound_sample.wav");
     chip8->initialize();
 }
 
