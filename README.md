@@ -1,24 +1,27 @@
 # A CHIP-8 Emulator Implementation with C++ and SDL2
-**I create this repository to construct a reference point for emulation 101 and beyond.
-berk-8 uses general features of chip-8 interpreter. Additionally, I used SDL2 libary for
-both graphics and sound.**
+**This repository provides a reference point for emulation 101 and beyond. berk-8 uses general features of CHIP-8 interpreter. The development of berk-8 has an object-oriented approach and the code can be examined in a straightforward way. SDL2 library is used for the development of both graphics and sound. More detailed information and emulator execution examples can be found below.**
 
 ## About CHIP-8
 [1] CHIP-8 is an interpreted programming language, developed by Joseph Weisbecker made on his 1802 Microprocessor. It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers in the mid-1970s. CHIP-8 programs are run on a CHIP-8 virtual machine. It was made to allow video games to be more easily programmed for these computers. The simplicity of CHIP-8, and its long history and popularity, has ensured that CHIP-8 emulators and programs are still being made to this day.
 
 ## Architecture of CHIP-8
 **CHIP-8 Processor provides:**
-- A 2048 kb main memory
+- A 2048 kb main memory with 8-bit word size
 - 16 8-bit registers (V)
 - 16 16-bit stack registers for recursive subroutine calls
 - 16 8-bit key registers for keypad I/O
 - I 2 byte register for storing memory addresses
-- PC, SP, a draw flag, delat and sound timers
-- 36 different instructions
+- PC, SP, a draw flag, delay and sound timers
+- 36 different 16-bit long instructions
 
 **CHIP-8 Instruction Set Architecture:** 
 
-All the instructions follow the general flow of state machine approach.
+As it is mentioned earlier, CHIP-8 has 36 different instructions and size of the instructions are 16-bit long.
+The instructions are in big-endian format and they cover 2 contiguous memory areas per instruction. 
+CHIP-8 has various types of instructions, such as arithmetic and logic operations, simple branching and jumping, 
+subroutine calls and returns, polling and waiting, and graphics manipulation.
+
+All the instructions follow the general flow of a state machine approach.
 This can be observed in the emulateNextClockCycle function below:
 ```cpp
 void Chip8::emulateNextClockCycle()
@@ -51,7 +54,7 @@ Available I/O device types are display, keypad and sound.
 There are polling and waiting instructions for I/O. For example, 
 polling instructions checks the state of keypad and waiting instruction
 waits for a key to be pressed from keypad. Sound and display also works 
-with polling instructions.
+with polling instructions. The timers also work at a constant rate of 60Hz.
 
 So, we can see that CHIP-8 has a very basic architecutre and does not rely 
 on complex interrupts or huge number of various instructions. Size of the memory and
