@@ -33,7 +33,7 @@ void Chip8::emulateNextClockCycle()
    decode();
 
    // EXECUTE step:
-   (this->*instructionMap[currentInstruction])();
+   (this->*instructionMap[opcode])();
 
    // Handle timer and blockers:
    calculateTimersAndBlock();
