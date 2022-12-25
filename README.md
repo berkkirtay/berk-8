@@ -40,13 +40,14 @@ void Chip8::emulateNextClockCycle()
 }
 ```
 
-**CHIP-8 Display:**
+**CHIP-8 Display and Graphics:**
 
-Display is handled with a basic sprite drawing instruction (Dxyn - DRW Vx, Vy, n).
-CHIP-8 has some built-in fontset and they are located in the first areas of main memory.
-Every font requires 5-bytes memory and new fonts cna be programmed this way.
-Whenever a draw instruction is compeleted, draw flag lets the graphics device know that
-it can render the display. So, this is how display works on CHIP-8.
+CHIP-8 uses a 4 byte long 64*32 pixel monochrome display. Graphics is handled 
+with a basic sprite drawing instruction (Dxyn - DRW Vx, Vy, n). CHIP-8 has some built-in 
+fontset and they are located in the first areas of main memory. Every font requires up to
+5-bytes memory and new fonts can be programmed this way. Whenever a draw instruction is 
+compeleted, draw flag lets the graphics device know that it can render the display. So, 
+this is how display works on CHIP-8.
 
 **CHIP-8 I/O:**
 
@@ -62,16 +63,17 @@ the registers are small and display is handled with a basic sprite drawing instr
 An emulator for this interpreter can be easily implemented for many other platforms as well.
 
 ## Examples from berk-8
-- **Space Invaders game**
+- **Space Invaders**
 ![Enc1](https://github.com/berkkirtay/berk-8/blob/main/examples/space_invaders_with_berk8.gif)
 
-- **Outlaw game**
+- **Outlaw**
 ![Enc1](https://github.com/berkkirtay/berk-8/blob/main/examples/outlaw_game.png)
 
-- **Testing tool for instruction set of CHIP-8**
+- **Testing tool for the instruction set of CHIP-8**
 ![Enc1](https://github.com/berkkirtay/berk-8/blob/main/examples/test_1.png)
 
-## How to compile and run
+## Build and Run
+With a g++ compiler, the following commands can be run:
 - g++ -I ./include/ ./src/*.cpp --std=c++17 -ofast -o main.out -lSDL2 -lSDL2_mixer
 - ./main.out --ROM {rom_name} 
 

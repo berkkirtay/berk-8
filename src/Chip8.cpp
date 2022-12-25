@@ -64,8 +64,10 @@ void Chip8::emulateNextClockCycle()
 }
 
 /*
-* Fetching currentInstruction is done by combining two contiguous memmory locations.
-* Since CHIP-8 stores instructions in that way, we increment PC by 2.
+* @fetch
+* Fetching currentInstruction is done by combining
+* two contiguous memmory locations. Since CHIP-8
+* stores instructions that way, we increment PC by 2.
 */
 void Chip8::fetch()
 {
@@ -73,6 +75,12 @@ void Chip8::fetch()
    PC += 2;
 }
 
+/*
+* @decode
+* Provides a basic decoding operation on
+* instruction and sets Vx and Vy fields that
+* will be used in the execute step.
+*/
 void Chip8::decode()
 {
    opcode = static_cast<InstructionSet::InstructionFamily>(currentInstruction & 0xF000);
@@ -81,7 +89,7 @@ void Chip8::decode()
 }
 
 /*
- * calculateTimersAndBlock function handles
+ * @calculateTimersAndBlock function handles
  * timing and delaying in every instruction cycle.
  */
 void Chip8::calculateTimersAndBlock()
@@ -112,6 +120,11 @@ void Chip8::calculateTimersAndBlock()
    std::this_thread::sleep_for(std::chrono::microseconds(1670));
 }
 
+/*
+* The rest of the functions handle execute
+* step by realizing the necessary events for
+* the current instruction:
+*/
 void Chip8::x0000()
 {
    switch (currentInstruction & 0x0FFF)
