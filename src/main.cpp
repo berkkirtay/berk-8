@@ -3,9 +3,9 @@
 #include <iostream>
 #include <sstream>
 #include "Frame.h"
-std::vector<std::string> parseArgs(int argc, char **argv);
+std::vector<std::string> parseArgs(int argc, char** argv);
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     auto parameters = parseArgs(argc, argv);
     Frame f;
@@ -15,11 +15,11 @@ int main(int argc, char **argv)
     return 0;
 }
 
-std::vector<std::string> parseArgs(int argc, char **argv)
+std::vector<std::string> parseArgs(int argc, char** argv)
 {
     std::stringstream builder;
     builder << "Usage:\n"
-            << "./{executable} {--ROM} {ROM_PATH} ";
+        << "./{executable} {--ROM} {ROM_PATH} ";
 
     std::string usage = builder.str();
 
@@ -44,5 +44,5 @@ std::vector<std::string> parseArgs(int argc, char **argv)
     }
 
     std::string arg2 = std::string(argv[2]);
-    return {arg1, arg2};
+    return { arg1, arg2 };
 }

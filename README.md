@@ -22,9 +22,9 @@ CHIP-8 has various types of instructions, such as arithmetic and logic operation
 subroutine calls and returns, polling and waiting, and graphics manipulation.
 
 All the instructions follow the general flow of a state machine approach.
-This can be observed in the emulateNextClockCycle function below:
+This can be observed in the emulateNextCycle function below:
 ```cpp
-void Chip8::emulateNextClockCycle()
+void Chip8::emulateNextCycle()
 {
    //FETCH step:
    fetch();

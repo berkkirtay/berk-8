@@ -39,7 +39,8 @@ private:
     std::chrono::steady_clock::time_point timePoint;
     uint8_t Vx;
     uint8_t Vy;
-    uint8_t fontSet[80] = {
+    uint8_t fontSet[80] =
+    {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -62,10 +63,9 @@ private:
      * Instruction Handler Functions:
      */
     using Handler = void (Chip8::*)();
-    std::unordered_map<
-        InstructionSet::InstructionFamily,
-        Handler>
-        instructionMap = {
+    std::unordered_map<InstructionSet::InstructionFamily, Handler>
+        instructionMap =
+    {
             {InstructionSet::x0000, &Chip8::x0000},
             {InstructionSet::x1000, &Chip8::x1000},
             {InstructionSet::x2000, &Chip8::x2000},
@@ -81,7 +81,8 @@ private:
             {InstructionSet::xC000, &Chip8::xC000},
             {InstructionSet::xD000, &Chip8::xD000},
             {InstructionSet::xE000, &Chip8::xE000},
-            {InstructionSet::xF000, &Chip8::xF000} };
+            {InstructionSet::xF000, &Chip8::xF000}
+    };
 
 private:
     void fetch();
@@ -107,7 +108,7 @@ private:
 public:
     void initialize();
     int32_t loadROM(const char* ROMPath);
-    void emulateNextClockCycle();
+    void emulateNextCycle();
     uint32_t* getGraphics();
     uint8_t* getKeys();
     uint8_t getSoundTimer();

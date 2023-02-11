@@ -10,7 +10,8 @@ private:
 	/*
 	* Key mapping from COSMAC VIP keypad to keyboard:
 	*/
-	std::unordered_map<int16_t, int8_t> keyMap = {
+	std::unordered_map<int16_t, int8_t> keyMap =
+	{
 		{SDLK_1, 0x1},
 		{SDLK_2, 0x2},
 		{SDLK_3, 0x3},
@@ -28,7 +29,8 @@ private:
 		{SDLK_c, 0xB},
 		{SDLK_v, 0xF}
 	};
-	enum keyState {
+	enum keyState
+	{
 		KEY_DOWN,
 		KEY_UP
 	};

@@ -42,6 +42,6 @@ void Frame::mainLoop()
 
         // Keyboard interrupt handler:
         eventHandler->handleEvent(chip8->getKeys());
-        chip8->emulateNextClockCycle();
+        chip8->emulateNextCycle();
     }
 }

@@ -48,7 +48,7 @@ int32_t Chip8::loadROM(const char* ROMPath)
    }
 }
 
-void Chip8::emulateNextClockCycle()
+void Chip8::emulateNextCycle()
 {
    //FETCH step:
    fetch();

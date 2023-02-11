@@ -19,7 +19,6 @@ Screen::Screen()
         SDL_TEXTUREACCESS_STREAMING,
         64, 32);
 
-
     SDL_SetTextureColorMod(texture, 255, 255, 255);
 }
 
